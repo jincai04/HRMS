@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Performance Appraisal & Bell Curve Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .header-bg {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+        th, td {
+            padding: 0.75rem 0.5rem; /* Reduced padding for more columns */
+            text-align: left;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.85rem;
+            white-space: nowrap; /* Prevent wrapping in header */
+        }
+        th {
+            background-color: #1e293b;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem; /* Smaller font for header */
+            letter-spacing: 0.05em;
+        }
+        .score-input {
+            width: 100%;
+            padding: 0.3rem;
+            border-radius: 0.375rem;
+            border: 1px solid #334155;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        /* Custom progress bar styles */
+        .progress-bar {
+            height: 1.5rem;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .progress-segment {
+            height: 100%;
+            transition: width 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 0 2px rgba(0,0,0,0.8);
+        }
+        /* Rating colors */
+        .rating-A { background-color: #10b981; } /* Emerald */
+        .rating-B { background-color: #3b82f6; } /* Blue */
+        .rating-C { background-color: #f59e0b; } /* Amber */
+        .rating-D { background-color: #ef4444; } /* Red */
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Header Section -->
+    <header class="header-bg flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-extrabold tracking-tight">AI Agent Performance Appraiser</h1>
+            <p class="text-blue-200 mt-1">HR Bell Curve Distribution Simulator</p>
+        </div>
+        <div class="text-2xl opacity-80">
+            <i class="fa-solid fa-chart-area"></i>
+        </div>
+    </header>
+
+    <!-- Configuration and Summary -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Bell Curve Settings -->
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+            <h2 class="text-xl font-bold mb-3 text-blue-400">Bell Curve Targets (Standard)</h2>
+            <div id="target-config">
+                <!-- Data will be populated by JS -->
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="lg:col-span-2 bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+            <h2 class="text-xl font-bold mb-3 text-cyan-400">Current Distribution Summary (<span id="total-staff-count">0</span> Staff)</h2>
+            <div id="distribution-progress" class="progress-bar flex mt-4">
+                <!-- Progress bar visualization -->
+            </div>
+            <div id="distribution-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm font-medium">
+                <!-- Summary statistics -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Data Input Table -->
+    <section class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 overflow-x-auto">
+        <h2 class="text-xl font-bold mb-4 text-fuchsia-400">Staff Performance Data Input</h2>
+
+        <table class="min-w-full divide-y divide-slate-700 rounded-lg">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Staff Name</th>
+                    <th>Title/Position</th>
+                    <th>Department</th>
+                    <th>Service Year</th>
+                    <th>Status</th>
+                    <th>Email Address</th>
+                    <th>Score (0-100)</th>
+                    <th>Rating</th>
+                    <th>Variance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="staff-table-body" class="divide-y divide-slate-800">
+                <!-- Staff rows will be generated here -->
+            </tbody>
+        </table>
+
+        <div class="mt-6 flex justify-end space-x-4">
+            <button id="add-staff-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-plus mr-2"></i>Add Staff
+            </button>
+            <button id="save-to-sheets-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-save mr-2"></i>Save to Google Sheets
+            </button>
+        </div>
+        <div id="save-status" class="mt-4 text-sm text-slate-400"></div>
+
+    </section>
+
+    <!-- NEW: Appraisal Document Upload Section -->
+    <section class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mt-6">
+        <h2 class="text-xl font-bold mb-4 text-yellow-400">Appraisal Document Upload & Rating Input</h2>
+        <p class="text-slate-400 mb-4 text-sm">Use this section to simulate scanning or uploading hard-copy appraisal forms to input final performance scores directly into the system. Note: Actual OCR/scanning technology is mocked here for simplicity.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div>
+                <label for="appraisal-file" class="block text-sm font-medium text-slate-300 mb-1">Upload Scanned Document (PDF/Image)</label>
+                <input type="file" id="appraisal-file" accept=".pdf, .jpg, .png" onchange="handleFileUpload(event)" class="block w-full text-sm text-slate-400
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-full file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-50 file:text-blue-700
+                  hover:file:bg-blue-100
+                  cursor-pointer
+                "/>
+            </div>
+
+            <!-- Manual Input Simulation Fields (Hidden until file selected) -->
+            <div id="manual-input-fields" class="md:col-span-2 grid grid-cols-3 gap-4 items-end hidden p-3 rounded-lg bg-slate-700/50 border border-slate-700">
+                <div class="col-span-1">
+                    <label for="appraisal-staff-name" class="block text-sm font-medium text-slate-300 mb-1">Staff Name from Document</label>
+                    <input type="text" id="appraisal-staff-name" placeholder="Enter Staff Name" class="score-input bg-slate-600">
+                </div>
+                <div class="col-span-1">
+                    <label for="appraisal-score" class="block text-sm font-medium text-slate-300 mb-1">Final Score (0-100)</label>
+                    <input type="number" id="appraisal-score" min="0" max="100" placeholder="e.g., 85" class="score-input bg-slate-600">
+                </div>
+                <div class="col-span-1">
+                    <button onclick="processAppraisalData()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        <i class="fa-solid fa-upload mr-2"></i>Input Rating
+                    </button>
+                </div>
+                <p id="upload-status" class="col-span-3 text-sm text-slate-400 mt-1"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Aggregate Analysis Section - UPDATED WITH UPSKILLING PLANS -->
+    <section class="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 mt-6">
+        <h2 class="text-xl font-bold mb-4 text-orange-400">Aggregate Performance Analysis & Improvement Areas</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Company-wide Improvement Focus -->
+            <div class="md:col-span-1 bg-slate-700 p-4 rounded-lg shadow-inner">
+                <h3 class="font-bold text-lg text-red-300 mb-2 border-b border-slate-600 pb-1"><i class="fa-solid fa-fire-extinguisher mr-2"></i> Company-Wide Focus Areas</h3>
+                <div id="company-improvement-areas" class="text-sm space-y-2">
+                    <!-- Improvement areas and upskilling plans will be listed here -->
+                </div>
+            </div>
+
+            <!-- Departmental Distribution Summary -->
+            <div class="md:col-span-2">
+                <h3 class="font-bold text-lg text-orange-300 mb-2 border-b border-slate-700 pb-1"><i class="fa-solid fa-sitemap mr-2"></i> Departmental Distribution</h3>
+                <div id="department-summary" class="space-y-4">
+                    <!-- Department summaries will be rendered here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<!-- Performance Report Modal (Summary) -->
+<div id="report-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50 transition-opacity duration-300" onclick="hideReport()">
+    <div id="report-content" class="bg-slate-800 rounded-xl p-8 max-w-lg w-full shadow-2xl border border-blue-500/30" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-center border-b border-slate-700 pb-3 mb-4">
+            <h2 id="report-title" class="text-2xl font-bold text-blue-400">Performance Appraisal Report</h2>
+            <button onclick="hideReport()" class="text-slate-400 hover:text-white transition-colors text-xl">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <div id="report-details" class="space-y-4">
+            <!-- Content generated by JS -->
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-700 flex justify-end">
+            <button id="generate-letter-btn" class="bg-fuchsia-600 hover:-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                <i class="fa-solid fa-envelope mr-2"></i>Generate Official Letter
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Letter Modal (New) -->
+<div id="letter-modal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center p-4 z-50 transition-opacity duration-300" onclick="hideLetter()">
+    <div class="bg-white text-slate-800 rounded-xl p-8 max-w-2xl w-full shadow-2xl overflow-y-auto max-h-[90vh]" onclick="event.stopPropagation()">
+        <div class="flex justify-between items-start border-b border-slate-300 pb-3 mb-6">
+            <h2 class="text-2xl font-bold text-slate-800">Official Performance Communication (Editable)</h2>
+            <button onclick="hideLetter()" class="text-slate-600 hover:text-red-500 transition-colors text-xl">
+                <i class="fa-solid fa-times"></i>
+            </button>
+        </div>
+        <!-- Editable Content Area -->
+        <div id="letter-content"
+             class="text-base leading-relaxed p-4 border border-gray-300 rounded-lg min-h-[500px] bg-gray-50 focus:outline-none focus:border-blue-500"
+             contenteditable="true">
+            <!-- Letter content generated by JS -->
+        </div>
+        <div class="mt-8 pt-4 border-t border-slate-300 flex justify-end">
+             <button onclick="copyLetterContent()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg transition-colors mr-3">
+                <i class="fa-solid fa-copy mr-2"></i>Copy Text
+            </button>
+            <button onclick="hideLetter()" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global Configuration
+    const bellCurveConfig = {
+        // Defines the standard Bell Curve targets
+        targets: [
+            { id: 'A', label: 'Outstanding (90-100)', targetPct: 10, minScore: 90, color: 'bg-emerald-500' },
+            { id: 'B', label: 'Core Performer (70-89)', targetPct: 70, minScore: 70, color: 'bg-blue-500' },
+            { id: 'C', label: 'Needs Improvement (50-69)', targetPct: 10, minScore: 50, color: 'bg-amber-500' },
+            { id: 'D', label: 'Poor (0-49)', targetPct: 10, minScore: 0, color: 'bg-red-500' }
+        ],
+        staffData: [],
+        currentDistribution: {},
+        departmentSummary: {},
+        improvementAreas: {}
+    };
+
+    // Department-specific upskilling and focus areas for underperforming teams
+    const departmentUpskillingPlans = {
+        'R&D': {
+            focus: "High-level technical debt and efficiency in new feature deployment.",
+            plan: "Mandatory training on 'Agile & DevOps Workflow Optimization' and 'Advanced Cloud Infrastructure Management' to improve deployment speed and code quality."
+        },
+        'Marketing': {
+            focus: "Low conversion rates and ineffective targeting in digital campaigns.",
+            plan: "Enrollment in 'Data-Driven Marketing Analytics' course, focusing on A/B testing, segmentation, and 'Omnichannel Customer Journey Mapping'."
+        },
+        'Finance': {
+            focus: "Errors in complex financial modeling and lack of compliance knowledge.",
+            plan: "Required certification in 'Advanced Excel Modeling for Forecasting' and 'Global Regulatory Compliance (IFRS/GAAP) Update' to mitigate risk and improve accuracy."
+        },
+        'Operations': {
+            focus: "Inefficient process flow, leading to bottlenecks and high cycle times.",
+            plan: "Implementation of 'Lean Six Sigma Yellow Belt' training for all staff, followed by a 'Process Mapping and Optimization Workshop' to streamline workflows."
+        },
+        'Sales': {
+            focus: "Lack of proficiency in CRM tools and ineffective negotiation tactics.",
+            plan: "Compulsory 'Advanced CRM (Salesforce/HubSpot) Mastery' course and 'High-Stake Negotiation Strategy' seminar to boost client conversion and retention."
+        },
+        'HR': {
+            focus: "Inconsistent application of policy and low employee retention rates.",
+            plan: "Mandatory participation in 'Modern Talent Acquisition and Employee Relations Law' workshops and 'Conflict Resolution and Mediation' skills training."
+        },
+        'IT': {
+            focus: "Slow incident response times and poor security posture.",
+            plan: "Prioritized training for 'ITIL Service Management' certification and 'Cybersecurity Essentials: Threat Detection and Response' to enhance system stability and response."
+        },
+        'Admin': {
+            focus: "Organization and documentation inconsistencies.",
+            plan: "Implementation of 'Digital Document Management & Archiving' systems training and 'Advanced Professional Communication' for external correspondence."
+        },
+        'Product': {
+            focus: "Missing market-fit analysis and poor user story definition.",
+            plan: "Enrollment in 'Pragmatic Product Management' certification and workshops on 'Advanced User Experience (UX) Research and Testing'."
+        },
+        'Logistics': {
+            focus: "Inventory management errors and high shipping costs.",
+            plan: "Required training in 'Supply Chain Optimization and Predictive Inventory Management' using specialized software."
+        },
+        'Unassigned': {
+            focus: "General skill gap due to lack of clear role definition.",
+            plan: "General foundational training in 'Business Communication' and 'Basic Project Management Fundamentals'."
+        }
+    };
+
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => document.querySelectorAll(selector);
+
+    // --- Utility Functions ---
+
+    /**
+     * Determines the initial rating based on the score and configuration.
+     * @param {number} score
+     * @returns {string} The rating ID (A, B, C, or D).
+     */
+    function getRatingId(score) {
+        // Sort by minScore descending to ensure correct assignment
+        const sortedTargets = [...bellCurveConfig.targets].sort((a, b) => b.minScore - a.minScore);
+        for (const config of sortedTargets) {
+            if (score >= config.minScore) {
+                return config.id;
+            }
+        }
+        return bellCurveConfig.targets[bellCurveConfig.targets.length - 1].id;
+    }
+
+    /**
+     * Calculates department-wise distribution and identifies company-wide improvement areas.
+     */
+    function calculateAggregateAnalysis() {
+        const staffData = bellCurveConfig.staffData;
+        const departmentData = {};
+
+        if (staffData.length === 0) {
+            bellCurveConfig.departmentSummary = {};
+            bellCurveConfig.improvementAreas = { topDepts: [], overallFeedback: 'No staff data available for company-wide analysis.' };
+            return;
+        }
+
+        // 1. Group staff by department and calculate distribution
+        staffData.forEach(staff => {
+            const dept = staff.department || 'Unassigned';
+            const ratingId = getRatingId(staff.score);
+
+            if (!departmentData[dept]) {
+                departmentData[dept] = { total: 0, ratings: { A: 0, B: 0, C: 0, D: 0 } };
+            }
+
+            departmentData[dept].total++;
+            departmentData[dept].ratings[ratingId]++;
+        });
+
+        // 2. Calculate percentages and format for rendering
+        const formattedSummary = {};
+        for (const dept in departmentData) {
+            const data = departmentData[dept];
+            formattedSummary[dept] = {
+                total: data.total,
+                distribution: bellCurveConfig.targets.map(t => {
+                    const count = data.ratings[t.id];
+                    const pct = (count / data.total) * 100;
+                    return {
+                        id: t.id,
+                        count: count,
+                        pct: pct,
+                        color: t.color,
+                        label: t.label,
+                    };
+                })
+            };
+        }
+        bellCurveConfig.departmentSummary = formattedSummary;
+
+        // 3. Identify Company-Wide Improvement Areas (Departments with highest C/D concentration)
+        let deptScores = [];
+        for (const dept in formattedSummary) {
+            const summary = formattedSummary[dept];
+            let totalConcentration = 0;
+            summary.distribution.forEach(d => {
+                // Weight D ratings higher than C ratings for intervention priority
+                if (d.id === 'D') totalConcentration += d.pct * 2;
+                else if (d.id === 'C') totalConcentration += d.pct * 1;
+            });
+
+            if (totalConcentration > 0) {
+                deptScores.push({ department: dept, score: totalConcentration });
+            }
+        }
+
+        // Sort by score descending and take the top 3
+        deptScores.sort((a, b) => b.score - a.score);
+
+        const topProblemDepts = deptScores.slice(0, 3).map(d => ({
+            department: d.department,
+            score: d.score,
+            message: "Highest concentration of \"Needs Improvement\" (C) and \"Poor\" (D) ratings."
+        }));
+
+        // 4. Determine overall feedback
+        let genericFeedback = '';
+        const overallDist = bellCurveConfig.currentDistribution;
+        const totalStaff = staffData.length;
+
+        if (totalStaff > 0) {
+            const A_count = overallDist['A']?.count || 0;
+            const D_count = overallDist['D']?.count || 0;
+
+            if (A_count / totalStaff > 0.3) {
+                genericFeedback = 'The distribution is heavily skewed toward "Outstanding" (over 30% A ratings). Review calibration standards to ensure rigor and mitigate potential inflation.';
+            } else if (D_count / totalStaff > 0.15) {
+                genericFeedback = 'High number of "Poor" ratings (over 15%). Immediate company-wide review of training, resourcing, and management support processes is recommended.';
+            } else {
+                genericFeedback = 'The company-wide bell curve distribution is generally healthy and within expected parameters, aligning with a normal distribution.';
+            }
+        } else {
+            genericFeedback = 'No staff data available for company-wide analysis.';
+        }
+
+        bellCurveConfig.improvementAreas = {
+            topDepts: topProblemDepts,
+            overallFeedback: genericFeedback
+        };
+    }
+
+    /**
+     * Calculates the current distribution and updates the global state.
+     */
+    function calculateDistribution() {
+        const staffCount = bellCurveConfig.staffData.length;
+        $('#total-staff-count').textContent = staffCount;
+
+        if (staffCount === 0) {
+            bellCurveConfig.currentDistribution = {};
+            calculateAggregateAnalysis(); // Run analysis even if 0 staff
+            updateUI();
+            return;
+        }
+
+        let distribution = {};
+        for (const target of bellCurveConfig.targets) {
+            distribution[target.id] = { count: 0, actualPct: 0, targetCount: Math.round(staffCount * (target.targetPct / 100)), variance: 0 };
+        }
+
+        // 1. Count staff in each category
+        for (const staff of bellCurveConfig.staffData) {
+            const ratingId = getRatingId(staff.score);
+            if (distribution[ratingId]) {
+                distribution[ratingId].count++;
+            }
+        }
+
+        // 2. Calculate percentages and variance
+        for (const id in distribution) {
+            const item = distribution[id];
+            item.actualPct = (item.count / staffCount) * 100;
+            item.variance = item.count - item.targetCount;
+        }
+
+        bellCurveConfig.currentDistribution = distribution;
+
+        // Run aggregate analysis after overall distribution is ready
+        calculateAggregateAnalysis();
+        updateUI();
+    }
+
+    // --- UI Rendering Functions ---
+
+    /**
+     * Renders the Bell Curve Configuration settings.
+     */
+    function renderConfig() {
+        const configDiv = $('#target-config');
+        configDiv.innerHTML = bellCurveConfig.targets.map(t => `
+            <div class="flex justify-between items-center py-1 border-b border-slate-700 last:border-b-0">
+                <span class="font-medium flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full ${t.color}"></span>
+                    ${t.label}
+                </span>
+                <span class="font-mono text-lg text-blue-300">${t.targetPct}%</span>
+            </div>
+        `).join('');
+    }
+
+    /**
+     * Renders the staff table rows.
+     */
+    function renderStaffTable() {
+        const tbody = $('#staff-table-body');
+        tbody.innerHTML = '';
+
+        bellCurveConfig.staffData.forEach((staff, index) => {
+            const row = document.createElement('tr');
+            const ratingId = getRatingId(staff.score);
+            const dist = bellCurveConfig.currentDistribution[ratingId];
+            const variance = dist ? dist.variance : 0;
+
+            let varianceText = variance === 0 ? 'On Target' : (variance > 0 ? `+${variance} Over` : `${variance} Under`);
+            let varianceClass = variance === 0 ? 'text-slate-400' : (variance > 0 ? 'text-red-400' : 'text-green-400');
+
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><input type="text" value="${staff.name}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="name" onchange="updateStaffData(this)"></td>
+
+                <!-- NEW FIELDS -->
+                <td><input type="text" value="${staff.title}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="title" onchange="updateStaffData(this)"></td>
+                <td><input type="text" value="${staff.department}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="department" onchange="updateStaffData(this)"></td>
+                <td><input type="number" min="0" value="${staff.serviceYear}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="serviceYear" oninput="updateStaffData(this)"></td>
+                <td><input type="text" value="${staff.status}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="status" onchange="updateStaffData(this)"></td>
+                <td><input type="email" value="${staff.email}" class="score-input bg-slate-700" data-id="${staff.id}" data-field="email" onchange="updateStaffData(this)"></td>
+
+                <!-- EXISTING FIELDS -->
+                <td><input type="number" min="0" max="100" value="${staff.score}" class="score-input" data-id="${staff.id}" data-field="score" oninput="updateStaffData(this)"></td>
+                <td class="font-bold">
+                    <span class="px-3 py-1 rounded-full text-xs text-white ${bellCurveConfig.targets.find(t => t.id === ratingId).color}">
+                        ${ratingId}
+                    </span>
+                </td>
+                <td class="${varianceClass} font-mono font-semibold">
+                    ${varianceText}
+                </td>
+                <td>
+                    <button onclick="showReport('${staff.id}')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-1 px-3 rounded-md transition-colors">
+                        <i class="fa-solid fa-file-lines mr-1"></i>Report
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    /**
+     * Renders the Summary and Progress Bar.
+     */
+    function renderSummary() {
+        const progressDiv = $('#distribution-progress');
+        const summaryDiv = $('#distribution-summary');
+
+        progressDiv.innerHTML = '';
+        summaryDiv.innerHTML = '';
+
+        const dist = bellCurveConfig.currentDistribution;
+        let totalHtml = '';
+
+        for (const target of bellCurveConfig.targets) {
+            const data = dist[target.id] || { count: 0, actualPct: 0, targetCount: Math.round(bellCurveConfig.staffData.length * (target.targetPct / 100)), variance: 0 };
+            const widthPct = data.actualPct;
+
+            // Progress Bar Segment
+            progressDiv.innerHTML += `
+                <div style="width: ${widthPct.toFixed(2)}%;" class="progress-segment ${target.color}">
+                    ${widthPct >= 5 ? `${target.id}` : ''}
+                </div>
+            `;
+
+            // Summary Stats
+            let varianceClass = data.variance === 0 ? 'text-slate-400' : (data.variance > 0 ? 'text-red-400' : 'text-green-400');
+
+            totalHtml += `
+                <div>
+                    <div class="text-xs text-slate-400">${target.id} (${target.targetPct}%)</div>
+                    <div class="text-white font-extrabold text-lg">${data.count} Staff</div>
+                    <div class="text-sm ${varianceClass}">Target: ${data.targetCount} (${data.variance >= 0 ? '+' : ''}${data.variance} ${data.variance >= 0 ? 'Over' : 'Under'})</div>
+                </div>
+            `;
+        }
+
+        summaryDiv.innerHTML = totalHtml;
+    }
+
+    /**
+     * Renders the Aggregate Analysis section (Department Summary and Improvement Areas).
+     */
+    function renderAggregateSummary() {
+        const deptSummaryDiv = $('#department-summary');
+        const improvementAreasDiv = $('#company-improvement-areas');
+
+        // 1. Department Summary
+        let deptHtml = '';
+        const summaryData = bellCurveConfig.departmentSummary;
+        const targets = bellCurveConfig.targets;
+
+        for (const dept in summaryData) {
+            const data = summaryData[dept];
+            deptHtml += `
+                <div class="bg-slate-700/50 p-4 rounded-lg">
+                    <h4 class="font-extrabold text-white mb-2 flex justify-between items-center">
+                        <span>${dept} (${data.total} Staff)</span>
+                        <span class="text-xs text-slate-400">Distribution</span>
+                    </h4>
+                    <div class="progress-bar flex h-3">
+                        ${data.distribution.map(d => `
+                            <div style="width: ${d.pct.toFixed(2)}%;" class="progress-segment rating-${d.id} h-full !font-normal">
+                                ${d.pct > 5 ? `${d.id}` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="flex justify-between text-xs mt-1 text-slate-400">
+                        ${data.distribution.map(d => `<span class="w-1/${targets.length} text-center">${d.count} (${d.pct.toFixed(0)}%)</span>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+        deptSummaryDiv.innerHTML = deptHtml || '<p class="text-slate-400 p-2">No staff data available for departmental breakdown.</p>';
+
+        // 2. Improvement Areas
+        let improvementHtml = `
+            <p class="font-semibold text-sm text-blue-400"><i class="fa-solid fa-chart-line mr-2"></i> ${bellCurveConfig.improvementAreas.overallFeedback}</p>
+            <div class="h-px bg-slate-600 my-2"></div>
+        `;
+
+        const topDepts = bellCurveConfig.improvementAreas.topDepts;
+
+        if (topDepts.length > 0) {
+            improvementHtml += '<p class="font-bold text-sm text-red-300 mb-1">Top Departments Requiring Targeted Intervention:</p><ul>';
+            topDepts.forEach(d => {
+                // Get the specific upskilling plan for the underperforming department
+                const plan = departmentUpskillingPlans[d.department] || departmentUpskillingPlans['Unassigned'];
+
+                improvementHtml += `<li class="text-sm flex items-start mb-3">
+                    <div>
+                        <i class="fa-solid fa-triangle-exclamation text-red-400 mt-1 mr-2"></i>
+                        <span class="font-bold text-white">${d.department}</span>: ${d.message}
+                        <div class="mt-1 p-2 bg-slate-800/70 border border-slate-700 rounded text-xs">
+                            <span class="font-semibold text-orange-300">Focus:</span> ${plan.focus}<br>
+                            <span class="font-semibold text-orange-300">Plan:</span> ${plan.plan}
+                        </div>
+                    </div>
+                </li>`;
+            });
+            improvementHtml += '</ul>';
+        } else if (bellCurveConfig.staffData.length > 0) {
+            improvementHtml += '<p class="text-sm text-green-400"><i class="fa-solid fa-circle-check mr-2"></i> No departments show critical underperformance concentration, suggesting healthy localized management.</p>';
+        }
+
+        improvementAreasDiv.innerHTML = improvementHtml;
+    }
+
+    /**
+     * Main function to update all UI elements based on current state.
+     */
+    function updateUI() {
+        renderStaffTable();
+        renderSummary();
+        renderAggregateSummary();
+    }
+
+    // --- Data Management ---
+
+    /**
+     * Updates staff data when an input field changes.
+     * @param {HTMLElement} inputElement
+     */
+    function updateStaffData(inputElement) {
+        const id = inputElement.getAttribute('data-id');
+        const field = inputElement.getAttribute('data-field');
+        let value = inputElement.value;
+
+        const staffIndex = bellCurveConfig.staffData.findIndex(s => s.id === id);
+        if (staffIndex > -1) {
+            if (field === 'score') {
+                value = Math.min(100, Math.max(0, parseInt(value) || 0)); // Clamp score between 0 and 100
+                inputElement.value = value;
+                bellCurveConfig.staffData[staffIndex].score = value;
+                calculateDistribution();
+            } else if (field === 'serviceYear') {
+                 value = Math.max(0, parseInt(value) || 0);
+                 inputElement.value = value;
+                 bellCurveConfig.staffData[staffIndex].serviceYear = value;
+            } else {
+                bellCurveConfig.staffData[staffIndex][field] = value;
+            }
+            // If the score didn't change, we still need to update the table for name/title/department changes
+            if (field !== 'score') {
+                renderStaffTable();
+                calculateDistribution(); // Recalculate distribution for department change
+            }
+        }
+    }
+
+    /**
+     * Adds a new staff member to the simulation.
+     */
+    function addStaff() {
+        const newId = crypto.randomUUID();
+        bellCurveConfig.staffData.push({
+            id: newId,
+            name: 'New Staff Member',
+            title: 'Associate',
+            department: 'Operations',
+            serviceYear: 0,
+            status: 'Contract',
+            email: 'new.staff@example.com',
+            score: 75 // Default score
+        });
+        calculateDistribution();
+    }
+
+    /**
+     * Saves the staff data to Google Sheets via Google Apps Script web app.
+     */
+    async function saveToSheets() {
+        const statusDiv = $('#save-status');
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzelzvPpNUb-tRdxmQ0UAQbXSUATGdnFsQ-KoNXVJ2FGzHXJbbeI8o6xQv4JWQSBuvOaw/exec';
+
+        if (webAppUrl === 'YOUR_WEB_APP_URL') {
+            statusDiv.textContent = 'Error: Please replace YOUR_WEB_APP_URL with your actual Google Apps Script web app URL.';
+            statusDiv.classList.remove('text-green-400', 'text-slate-400');
+            statusDiv.classList.add('text-red-400');
+            return;
+        }
+
+        if (bellCurveConfig.staffData.length === 0) {
+            statusDiv.textContent = 'No staff data to save.';
+            statusDiv.classList.remove('text-green-400', 'text-red-400');
+            statusDiv.classList.add('text-slate-400');
+            return;
+        }
+
+        statusDiv.textContent = 'Saving to Google Sheets...';
+        statusDiv.classList.remove('text-green-400', 'text-red-400');
+        statusDiv.classList.add('text-yellow-400');
+
+        try {
+            const response = await fetch(webAppUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bellCurveConfig.staffData),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                statusDiv.textContent = 'Data saved successfully to Google Sheets!';
+                statusDiv.classList.remove('text-yellow-400', 'text-red-400');
+                statusDiv.classList.add('text-green-400');
+            } else {
+                statusDiv.textContent = `Error: ${result.message}`;
+                statusDiv.classList.remove('text-yellow-400', 'text-green-400');
+                statusDiv.classList.add('text-red-400');
+            }
+        } catch (error) {
+            statusDiv.textContent = `Error: ${error.message}`;
+            statusDiv.classList.remove('text-yellow-400', 'text-green-400');
+            statusDiv.classList.add('text-red-400');
+        }
+    }
+
+    // --- New: Document Upload Simulation Functions ---
+
+    /**
+     * Handles the file upload change event. Simulates scanning and makes the manual input fields visible.
+     * @param {Event} event
+     */
+    window.handleFileUpload = function(event) {
+        const file = event.target.files[0];
+        const statusDiv = $('#upload-status');
+        const inputFields = $('#manual-input-fields');
+
+        if (file) {
+            statusDiv.textContent = `File "${file.name}" uploaded. Simulating OCR extraction... Please manually verify and input the score below.`;
+            statusDiv.classList.remove('text-red-400');
+            statusDiv.classList.add('text-yellow-400');
+            inputFields.classList.remove('hidden');
+
+            // Clear previous inputs
+            $('#appraisal-staff-name').value = '';
+            $('#appraisal-score').value = '';
+        } else {
+            statusDiv.textContent = 'No file selected.';
+            statusDiv.classList.remove('text-yellow-400');
+            statusDiv.classList.add('text-slate-400');
+            inputFields.classList.add('hidden');
+        }
+    }
+
+    /**
+     * Processes the manually input appraisal data (simulated OCR result) and updates the staff record.
+     */
+    window.processAppraisalData = function() {
+        const staffNameInput = $('#appraisal-staff-name');
+        const scoreInput = $('#appraisal-score');
+        const statusDiv = $('#upload-status');
+        const name = staffNameInput.value.trim();
+        const score = parseInt(scoreInput.value);
+
+        if (!name || isNaN(score) || score < 0 || score > 100) {
+            statusDiv.textContent = 'Error: Please enter a valid Staff Name and a score between 0 and 100.';
+            statusDiv.classList.remove('text-yellow-400', 'text-green-400');
+            statusDiv.classList.add('text-red-400');
+            return;
+        }
+
+        // 1. Find the staff member (case-insensitive search by name)
+        const staffIndex = bellCurveConfig.staffData.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+
+        if (staffIndex > -1) {
+            // 2. Update the existing staff score
+            bellCurveConfig.staffData[staffIndex].score = score;
+            calculateDistribution();
+            statusDiv.textContent = `Success! Updated performance score for ${bellCurveConfig.staffData[staffIndex].name} to ${score}.`;
+            statusDiv.classList.remove('text-red-400', 'text-yellow-400');
+            statusDiv.classList.add('text-green-400');
+
+            // Clear inputs and file selector after success
+            staffNameInput.value = '';
+            scoreInput.value = '';
+            $('#appraisal-file').value = '';
+            $('#manual-input-fields').classList.add('hidden');
+
+
+        } else {
+            // 3. Staff not found - offer to add them (simplified: prompt for manual addition)
+            statusDiv.textContent = `Staff member "${name}" not found. Please use the "Add Staff" button to create a new record manually or check the spelling.`;
+            statusDiv.classList.remove('text-yellow-400', 'text-green-400');
+            statusDiv.classList.add('text-red-400');
+        }
+    }
+
+    // --- Report Functions (Unchanged) ---
+
+    /**
+     * Provides placeholder summaries and recommendations based on the rating.
+     */
+    function getReportDescription(ratingId, name) {
+        switch (ratingId) {
+            case 'A':
+                return {
+                    summary: `Exceptional performance. ${name} consistently exceeded all expectations and demonstrated outstanding leadership.`,
+                    recommendation: 'Eligible for maximum bonus, promotion consideration, and critical project leadership roles.'
+                };
+            case 'B':
+                return {
+                    summary: `Strong, core performance. ${name} met all key objectives and delivered quality results aligned with team goals.`,
+                    recommendation: 'Eligible for standard bonus. Focus on development opportunities in a specialized area.'
+                };
+            case 'C':
+                return {
+                    summary: `Performance needs improvement. ${name} partially met objectives and requires targeted support in certain areas.`,
+                    recommendation: 'Requires a Performance Improvement Plan (PIP) focusing on specific measurable goals over the next quarter.'
+                };
+            case 'D':
+                return {
+                    summary: `Unsatisfactory performance. ${name} failed to meet several critical objectives despite management support.`,
+                    recommendation: 'Immediate corrective action required. Consideration for reassignment or formal disciplinary action.'
+                };
+            default:
+                return { summary: 'Rating not found.', recommendation: 'N/A' };
+        }
+    }
+
+    /**
+     * Displays the individual performance report modal.
+     */
+    window.showReport = function(staffId) {
+        const staff = bellCurveConfig.staffData.find(s => s.id === staffId);
+        if (!staff) return;
+
+        const ratingId = getRatingId(staff.score);
+        const ratingConfig = bellCurveConfig.targets.find(t => t.id === ratingId);
+        const descriptions = getReportDescription(ratingId, staff.name);
+
+        const reportDetailsDiv = $('#report-details');
+        const reportTitle = $('#report-title');
+        const modal = $('#report-modal');
+        const generateLetterBtn = $('#generate-letter-btn');
+
+        reportTitle.textContent = `${staff.name}'s Appraisal Report`;
+        generateLetterBtn.onclick = () => generateLetter(staffId); // Bind new function
+
+        reportDetailsDiv.innerHTML = `
+            <div class="p-4 rounded-lg border-l-4 ${ratingConfig.color} bg-slate-700/50">
+                <p class="text-sm text-slate-400">Final Score:</p>
+                <p class="text-3xl font-extrabold text-white">${staff.score}/100</p>
+                <p class="mt-2 text-sm text-slate-400">Rating:</p>
+                <p class="text-xl font-bold text-white">${ratingId} - ${ratingConfig.label.split('(')[0].trim()}</p>
+            </div>
+            <div class="bg-slate-700 p-4 rounded-lg">
+                <h3 class="font-bold text-lg text-blue-300 mb-1">Employee Details</h3>
+                <p class="text-slate-300 text-sm">Title: ${staff.title}</p>
+                <p class="text-slate-300 text-sm">Department: ${staff.department}</p>
+                <p class="text-slate-300 text-sm">Service: ${staff.serviceYear} year(s)</p>
+                <p class="text-slate-300 text-sm">Status: ${staff.status}</p>
+            </div>
+            <div class="bg-slate-700 p-4 rounded-lg">
+                <h3 class="font-bold text-lg text-blue-300 mb-1">Performance Summary</h3>
+                <p class="text-slate-300">${descriptions.summary}</p>
+            </div>
+
+            <div class="bg-slate-700 p-4 rounded-lg">
+                <h3 class="font-bold text-lg text-blue-300 mb-1">Development & Recommendation</h3>
+                <p class="text-slate-300">${descriptions.recommendation}</p>
+            </div>
+        `;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    /**
+     * Hides the individual performance report modal.
+     */
+    window.hideReport = function() {
+        const modal = $('#report-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+
+    // --- Letter Generation Functions (Unchanged) ---
+
+    /**
+     * Provides comprehensive content for the official staff letter.
+     */
+    function getLetterContent(ratingId, staff) {
+        const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const template = {
+            A: {
+                title: "Exceptional Performance Review and Recognition",
+                recognition: "In recognition of your exceptional contributions and demonstrated leadership, you will receive a maximum performance bonus and a formal nomination for the Executive Leadership Track. Congratulations!",
+                upskilling: "You are invited to join the 'High-Potential (HiPo) Accelerated Development Program', focusing on strategic decision-making and business acumen.",
+                closing: "We are thrilled to have you as a leader within our organization and look forward to your continued success."
+            },
+            B: {
+                title: "Successful Performance Review and Development Planning",
+                recognition: "We acknowledge your consistently strong and reliable performance throughout the year. Your dedication as a core contributor is highly valued and merits a standard performance bonus.",
+                upskilling: "You are encouraged to utilize the 'Core Contributor Career Pathing' program, offering specialized certifications in your domain and cross-functional project exposure.",
+                closing: "We appreciate your solid commitment and are excited to support your continued professional development."
+            },
+            C: {
+                title: "Performance Review and Targeted Improvement Plan",
+                recognition: "We recognize the efforts made this year. We are committed to supporting your growth, and recognition will be directly tied to measurable improvements in the next cycle.",
+                upskilling: "You are required to enroll in the 'Foundational Skill Enhancement' program immediately, focusing on essential skills (e.g., Time Management, Project Fundamentals) to meet target expectations.",
+                closing: "We are confident that with focused effort and utilization of the resources provided, you can achieve your full potential."
+            },
+            D: {
+                title: "Formal Notification of Performance Improvement Plan (PIP)",
+                recognition: "Your performance this cycle requires immediate corrective action. Recognition will be deferred pending successful completion of the Performance Improvement Plan.",
+                upskilling: "You will be assigned personalized, mandatory training modules and one-on-one coaching to address critical performance gaps.",
+                closing: "We expect measurable improvement within the next 90 days as outlined in the attached Performance Improvement Plan."
+            }
+        };
+
+        const data = template[ratingId] || template['C'];
+
+        return `
+            <p class="text-right text-sm text-gray-500">${date}</p>
+            <p class="mb-2">Dear <span class="font-semibold">${staff.name}</span>,</p>
+            <p class="mb-6 text-sm text-gray-600">
+                <span class="font-medium">${staff.title}</span> | Department: ${staff.department} | Status: ${staff.status} | Email: ${staff.email}
+            </p>
+
+            <h3 class="text-xl font-bold mb-3 text-blue-700">${data.title}</h3>
+
+            <p class="mb-6">
+                This letter formally communicates the outcome of your recent performance appraisal for the current cycle. After
+                <span class="font-extrabold text-gray-700">${staff.serviceYear} year(s)</span> of commitment as a
+                <span class="font-medium">${staff.title}</span> in the ${staff.department} Department, your objective assessment
+                resulted in a final score of <span class="font-extrabold text-blue-600">${staff.score}</span>/100.
+                Your final performance rating is officially designated as <span class="font-extrabold text-blue-600">${ratingId}</span>.
+            </p>
+
+            <!-- Recognition Section -->
+            <div class="p-4 rounded-lg bg-emerald-100 border-l-4 border-emerald-500 mb-6">
+                <h4 class="font-bold text-lg text-emerald-700 mb-2"><i class="fa-solid fa-trophy mr-2"></i> Staff Recognition & Rewards</h4>
+                <p class="text-gray-700">${data.recognition}</p>
+            </div>
+
+            <!-- Upskilling Section -->
+            <div class="p-4 rounded-lg bg-indigo-100 border-l-4 border-indigo-500 mb-6">
+                <h4 class="font-bold text-lg text-indigo-700 mb-2"><i class="fa-solid fa-graduation-cap mr-2"></i> Upskilling & Development Program Enrollment</h4>
+                <p class="text-gray-700">${data.upskilling}</p>
+            </div>
+
+            <p class="mb-6">${data.closing} Please schedule a follow-up meeting with your direct manager within the next five working days to discuss these details and next steps.</p>
+
+            <p class="mt-8">Sincerely,</p>
+            <p class="font-semibold text-slate-800">The HR Management Team</p>
+        `;
+    }
+
+    /**
+     * Generates and displays the official letter modal.
+     */
+    window.generateLetter = function(staffId) {
+        const staff = bellCurveConfig.staffData.find(s => s.id === staffId);
+        if (!staff) return;
+
+        const ratingId = getRatingId(staff.score);
+        const letterContent = getLetterContent(ratingId, staff);
+
+        // Inject content into the editable div
+        $('#letter-content').innerHTML = letterContent;
+        hideReport(); // Close the report summary modal
+
+        const modal = $('#letter-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    /**
+     * Hides the official letter modal.
+     */
+    window.hideLetter = function() {
+        const modal = $('#letter-modal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    /**
+     * Copies the content of the letter to the clipboard.
+     */
+    window.copyLetterContent = function() {
+        const contentDiv = $('#letter-content');
+
+        // Use a selection approach for contenteditable div
+        const range = document.createRange();
+        range.selectNodeContents(contentDiv);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+
+        let success = false;
+        try {
+            // Deprecated but works in Canvas iframe environment
+            success = document.execCommand('copy');
+        } catch (err) {
+            console.error('Copy command failed:', err);
+        }
+
+        const copyBtn = document.querySelector('.bg-sky-500');
+        if (success) {
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.remove('bg-sky-500');
+            copyBtn.classList.add('bg-green-500');
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Text';
+                copyBtn.classList.remove('bg-green-500');
+                copyBtn.classList.add('bg-sky-500');
+            }, 2000);
+        } else {
+            // Fallback for visual confirmation of failure/manual copy
+            copyBtn.textContent = 'Manual Copy Needed!';
+            copyBtn.classList.remove('bg-sky-500');
+            copyBtn.classList.add('bg-red-500');
+            setTimeout(() => {
+                copyBtn.textContent = 'Copy Text';
+                copyBtn.classList.remove('bg-red-500');
+                copyBtn.classList.add('bg-sky-500');
+            }, 3000);
+        }
+    }
+
+
+    // --- Initialization ---
+
+    /**
+     * Sets up the initial data and binds event listeners.
+     */
+    function init() {
+        // Initial dummy data with new fields
+        bellCurveConfig.staffData = [
+            { id: crypto.randomUUID(), name: 'Alice Smith', title: 'Senior Developer', department: 'R&D', serviceYear: 5, status: 'Permanent', email: 'alice.s@example.com', score: 95 },
+            { id: crypto.randomUUID(), name: 'Bob Johnson', title: 'Marketing Manager', department: 'Marketing', serviceYear: 2, status: 'Permanent', email: 'bob.j@example.com', score: 88 },
+            { id: crypto.randomUUID(), name: 'Charlie Brown', title: 'Financial Analyst', department: 'Finance', serviceYear: 1, status: 'Contract', email: 'c.brown@example.com', score: 72 },
+            { id: crypto.randomUUID(), name: 'David Lee', title: 'Junior Assistant', department: 'Admin', serviceYear: 0, status: 'Probationary', email: 'david.lee@example.com', score: 65 },
+            { id: crypto.randomUUID(), name: 'Eve Martinez', title: 'VP, Product', department: 'Product', serviceYear: 10, status: 'Permanent', email: 'eve.m@example.com', score: 92 },
+            { id: crypto.randomUUID(), name: 'Frank White', title: 'Sales Executive', department: 'Sales', serviceYear: 4, status: 'Permanent', email: 'frank.w@example.com', score: 81 },
+            { id: crypto.randomUUID(), name: 'Grace Hall', title: 'HR Coordinator', department: 'HR', serviceYear: 3, status: 'Permanent', email: 'grace.h@example.com', score: 77 },
+            { id: crypto.randomUUID(), name: 'Henry King', title: 'Network Engineer', department: 'IT', serviceYear: 6, status: 'Permanent', email: 'henry.k@example.com', score: 79 },
+            { id: crypto.randomUUID(), name: 'Ivy Adams', title: 'Data Entry Clerk', department: 'Operations', serviceYear: 1, status: 'Contract', email: 'ivy.a@example.com', score: 55 },
+            { id: crypto.randomUUID(), name: 'Jack Taylor', title: 'Project Lead', department: 'R&D', serviceYear: 7, status: 'Permanent', email: 'jack.t@example.com', score: 85 },
+            { id: crypto.randomUUID(), name: 'Kelly Green', title: 'Warehouse Associate', department: 'Logistics', serviceYear: 0, status: 'Probationary', email: 'kelly.g@example.com', score: 40 },
+            { id: crypto.randomUUID(), name: 'Mike Miller', title: 'Sales Representative', department: 'Sales', serviceYear: 2, status: 'Permanent', email: 'mike.m@example.com', score: 58 },
+            { id: crypto.randomUUID(), name: 'Nancy Drew', title: 'Product Specialist', department: 'Product', serviceYear: 3, status: 'Permanent', email: 'nancy.d@example.com', score: 62 },
+        ];
+
+        renderConfig();
+        calculateDistribution();
+
+        // Bind Add Staff button
+        $('#add-staff-btn').addEventListener('click', addStaff);
+
+        // Bind Save to Sheets button
+        $('#save-to-sheets-btn').addEventListener('click', saveToSheets);
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
